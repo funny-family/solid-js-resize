@@ -1,4 +1,4 @@
-import { createEffect, createSignal } from 'solid-js';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 
 type ResizePointsMap = Map<string, HTMLElement>;
 
@@ -11,27 +11,51 @@ export var useResize = () => {
 
   var resizePointsMap: ResizePointsMap = new Map();
 
-  // prettier-ignore
-  var createResizePointsMapControl = (
-    (map: ResizePointsMap) => (
-      <T extends any>(callback: (map: ResizePointsMap) => T) => (
-        () => callback(map)
-      )
-    )
-  );
+  // // prettier-ignore
+  // var createResizePointsMapControl = (
+  //   (map: ResizePointsMap) => (
+  //     <T extends any>(callback: (map: ResizePointsMap) => T) => (
+  //       () => callback(map)
+  //     )
+  //   )
+  // );
 
-  var addResizePoint = createResizePointsMapControl(resizePointsMap)((map) => {
-    console.log(1231313, map);
+  var registerResizePoint = <T extends HTMLElement>(
+    key: string,
+    element: T
+  ) => {
+    resizePointsMap.set(key, element);
+  };
 
-    // return 1;
-  });
+  var unregisterResizePoint = (key: string) => {
+    resizePointsMap.delete(key);
+
+    // element.setAttribute('data-resize-point-key', key);
+  };
+
+  var onMousedown = (event: MouseEvent) => {
+    var target = event.target! as HTMLElement;
+
+    resizePointsMap.forEach((resizePoint, key) => {
+      if (target === resizePoint) {
+        console.log(key, event);
+      }
+    });
+  };
 
   createEffect(() => {
     console.log({ anchorElement: anchorElement(), resizePointsMap });
+
+    anchorElement().addEventListener('mousedown', onMousedown, true);
+  });
+
+  onCleanup(() => {
+    anchorElement().removeEventListener('mousedown', onMousedown, false);
   });
 
   return {
     setAnchorElement,
-    addResizePoint,
+    registerResizePoint,
+    unregisterResizePoint,
   };
 };
