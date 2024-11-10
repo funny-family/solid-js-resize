@@ -25,35 +25,77 @@ export var useResize = () => {
     element: T
   ) => {
     resizePointsMap.set(key, element);
+
+    element.setAttribute('data-resize-point-key', key);
   };
 
   var unregisterResizePoint = (key: string) => {
-    resizePointsMap.delete(key);
+    var resizePoint = resizePointsMap.get(key);
 
-    // element.setAttribute('data-resize-point-key', key);
+    if (resizePoint == null) {
+      return false;
+    }
+
+    resizePoint.removeAttribute('data-resize-point-key');
+
+    return resizePointsMap.delete(key);
   };
 
-  var onMousedown = (event: MouseEvent) => {
+  // ----------------------------------------------------------------
+
+  var currentElement: HTMLElement | null = null;
+
+  var onResizeStart = (event: MouseEvent) => {
     var target = event.target! as HTMLElement;
+
+    document.addEventListener('mousemove', onResize, false);
 
     resizePointsMap.forEach((resizePoint, key) => {
       if (target === resizePoint) {
         console.log(key, event);
+
+        currentElement = target;
       }
     });
   };
 
+  var onResize = (event: MouseEvent) => {
+    var currentElementStyle = getComputedStyle(currentElement!);
+
+    console.group('onResize:');
+    console.log(event);
+    console.log(currentElement);
+    console.log(currentElementStyle);
+    console.groupEnd();
+  };
+
+  var onResizeEnd = (event: MouseEvent) => {
+    var target = event.target! as HTMLElement;
+
+    console.group('onResizeEnd:');
+    // console.log(target);
+    console.log(currentElement);
+    console.groupEnd();
+
+    document.removeEventListener('mousemove', onResize, false);
+  };
+
+  // ----------------------------------------------------------------
+
   createEffect(() => {
     console.log({ anchorElement: anchorElement(), resizePointsMap });
 
-    anchorElement().addEventListener('mousedown', onMousedown, true);
+    anchorElement().addEventListener('mousedown', onResizeStart, true);
+    document.addEventListener('mouseup', onResizeEnd, true);
   });
 
   onCleanup(() => {
-    anchorElement().removeEventListener('mousedown', onMousedown, false);
+    anchorElement().removeEventListener('mousedown', onResizeStart, false);
+    document.addEventListener('mouseup', onResizeEnd, false);
   });
 
   return {
+    currentElement,
     setAnchorElement,
     registerResizePoint,
     unregisterResizePoint,
