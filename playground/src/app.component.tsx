@@ -3,6 +3,7 @@ import { Component } from 'solid-js';
 import { Section1 } from '@src/components/Section1/Section1';
 import { Section2 } from '@src/components/Section2/Section2';
 import { Section3 } from '@src/components/Section3/Section3';
+import { Section4 } from '@src/components/Section4/Section4';
 
 export var App: Component = () => {
   return (
@@ -18,6 +19,8 @@ export var App: Component = () => {
       <Section3 />
 
       <hr />
+
+      <Section4 />
     </main>
   );
 };
