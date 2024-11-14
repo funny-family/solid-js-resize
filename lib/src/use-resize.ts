@@ -2,8 +2,24 @@ import { createEffect, createSignal, onCleanup } from 'solid-js';
 
 type ResizePointsMap = Map<string, HTMLElement>;
 
+/**
+  @example
+  {
+    'n': ⬆️,
+    'e': ➡️,
+    's': ⬇️,
+    'w': ⬅️,
+    'ne': ↗️,
+    'nw': ↖️,
+    'se': ↘️,
+    'sw': ↙️,
+  }
+*/
+type ResizePointDirectionName = 'n' | 'e' | 's' | 'w' | 'ne' |'nw' | 'se' | 'sw'
+
 export var useResize = () => {
   var anchorElementSignal = createSignal<HTMLElement>(null as any);
+
   var anchorElement = anchorElementSignal[0];
   var setAnchorElement = anchorElementSignal[1] as <T extends HTMLElement>(
     element: T
@@ -22,7 +38,10 @@ export var useResize = () => {
 
   var registerResizePoint = <T extends HTMLElement>(
     key: string,
-    element: T
+    element: T,
+    option: {
+      direction:
+    }
   ) => {
     resizePointsMap.set(key, element);
 
@@ -43,10 +62,24 @@ export var useResize = () => {
 
   // ----------------------------------------------------------------
 
-  var currentElement: HTMLElement | null = null;
+  var currentResizePoint: HTMLElement | null = null;
+
+  var anchorElement_startWidth = 0;
+  var anchorElement_startHeight = 0;
+
+  var anchorElement_clientX = 0;
+  var anchorElement_clientY = 0;
 
   var onResizeStart = (event: MouseEvent) => {
     var target = event.target! as HTMLElement;
+
+    var anchorElementStyle = getComputedStyle(anchorElement());
+
+    anchorElement_startWidth = parseInt(anchorElementStyle.width, 10);
+    anchorElement_startHeight = parseInt(anchorElementStyle.height, 10);
+
+    anchorElement_clientX = event.clientX;
+    anchorElement_clientY = event.clientY;
 
     document.addEventListener('mousemove', onResize, false);
 
@@ -54,19 +87,33 @@ export var useResize = () => {
       if (target === resizePoint) {
         console.log(key, event);
 
-        currentElement = target;
+        currentResizePoint = target;
       }
     });
   };
 
   var onResize = (event: MouseEvent) => {
-    var currentElementStyle = getComputedStyle(currentElement!);
+    var currentResizePointStyle = getComputedStyle(currentResizePoint!);
 
     console.group('onResize:');
     console.log(event);
-    console.log(currentElement);
-    console.log(currentElementStyle);
+    console.log(currentResizePoint);
+    console.log(currentResizePointStyle);
     console.groupEnd();
+
+    // prettier-ignore
+    anchorElement().style.width = (
+      anchorElement_clientX +
+      event.clientX -
+      anchorElement_clientX
+    ) + 'px';
+
+    // prettier-ignore
+    anchorElement().style.height = (
+      anchorElement_clientY +
+      event.clientY -
+      anchorElement_clientY
+    ) + 'px';
   };
 
   var onResizeEnd = (event: MouseEvent) => {
@@ -74,7 +121,7 @@ export var useResize = () => {
 
     console.group('onResizeEnd:');
     // console.log(target);
-    console.log(currentElement);
+    console.log(currentResizePoint);
     console.groupEnd();
 
     document.removeEventListener('mousemove', onResize, false);
@@ -95,7 +142,7 @@ export var useResize = () => {
   });
 
   return {
-    currentElement,
+    currentResizePoint,
     setAnchorElement,
     registerResizePoint,
     unregisterResizePoint,
